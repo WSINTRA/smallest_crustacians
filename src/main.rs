@@ -1,7 +1,7 @@
 use burn::backend::autodiff::Autodiff;
 use burn::backend::cpu::Cpu;
 use burn::module::Module;
-use burn::tensor::{Device, Distribution, Int, Tensor};
+use burn::tensor::{Device, Distribution, Tensor};
 
 type MyBackend = Autodiff<Cpu>;
 struct Person {
