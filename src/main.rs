@@ -1,27 +1,74 @@
 use burn::backend::autodiff::Autodiff;
 use burn::backend::cpu::Cpu;
-use burn::tensor::Tensor;
+use burn::module::Module;
+use burn::tensor::{Device, Distribution, Int, Tensor};
 
 type MyBackend = Autodiff<Cpu>;
-
+struct Person {
+    age: f32,
+    income: f32,
+}
 fn main() {
-    // Create a 2D tensor from a nested slice
-    let t1: Tensor<MyBackend, 2> = [[1.0, 2.0], [3.0, 4.0]].into();
-    println!("t1:\n{t1}\n");
+    let device: Device<MyBackend> = Default::default();
+    let model = LinearModel::new(&device);
 
-    // Create another tensor
-    let t2: Tensor<MyBackend, 2> = [[5.0, 6.0], [7.0, 8.0]].into();
-    println!("t2:\n{t2}\n");
+    let person1 = Person {
+        age: 25.0,
+        income: 500000.0,
+    };
+    let person2 = Person {
+        age: 20.0,
+        income: 240000.0,
+    };
+    let person3 = Person {
+        age: 40.0,
+        income: 200000.0,
+    };
 
-    // Element-wise addition
-    let sum = t1.clone() + t2.clone();
-    println!("t1 + t2:\n{sum}\n");
+    let input: Tensor<MyBackend, 2> = [
+        [person1.age, person1.income],
+        [person2.age, person2.income],
+        [person3.age, person3.income],
+    ]
+    .into();
+    let output = model.forward(input);
+    println!("Predictions from lesson 1: \n{output}\n");
+}
 
-    // Element-wise multiplication
-    let product = t1.clone() * t2.clone();
-    println!("t1 * t2:\n{product}\n");
+#[derive(Module, Debug, Clone)]
+struct LinearModel {
+    weights: Tensor<MyBackend, 2>,
+    bias: Tensor<MyBackend, 2>,
+}
 
-    // Matrix multiplication
-    let matmul = t1.matmul(t2);
-    println!("t1 @ t2:\n{matmul}\n");
+impl LinearModel {
+    pub fn new(device: &Device<MyBackend>) -> Self {
+        Self {
+            weights: Tensor::random([2, 1], Distribution::Uniform(-1.0, 1.0), device),
+            bias: Tensor::zeros([1, 1], device),
+        }
+    }
+    pub fn forward(&self, input: Tensor<MyBackend, 2>) -> Tensor<MyBackend, 2> {
+        return input.matmul(self.weights.clone()) + self.bias.clone();
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sum_and_product() {
+        let t1: Tensor<MyBackend, 2> = [[2.0, 1.0], [2.0, 5.0]].into();
+        let t2: Tensor<MyBackend, 2> = [[1.0, 5.0], [3.0, 2.0]].into();
+        let sum_result = t1.clone() + t2.clone();
+        let sum_values = sum_result.into_data().to_vec::<f32>().expect("testing");
+        assert_eq!(sum_values, vec![3.0, 6.0, 5.0, 7.0]);
+
+        let multiply_result = t1 * t2;
+        let multi_values = multiply_result
+            .into_data()
+            .to_vec::<f32>()
+            .expect("testing");
+        assert_eq!(multi_values, vec![2.0, 5.0, 6.0, 10.0]);
+    }
 }
