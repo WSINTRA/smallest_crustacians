@@ -1,7 +1,9 @@
 use burn::backend::autodiff::Autodiff;
 use burn::backend::cpu::Cpu;
+use burn::nn::{Linear, LinearConfig};
 use burn::module::Module;
-use burn::tensor::{Device, Distribution, Tensor};
+use burn::optim::{GradientsParams, Optimizer, SgdConfig};
+use burn::tensor::{Device, Tensor};
 
 type MyBackend = Autodiff<Cpu>;
 struct Person {
@@ -10,7 +12,7 @@ struct Person {
 }
 fn main() {
     let device: Device<MyBackend> = Default::default();
-    let model = LinearModel::new(&device);
+    let mut model = LinearModel::new(&device);
 
     let person1 = Person {
         age: 25.0,
@@ -24,38 +26,80 @@ fn main() {
         age: 40.0,
         income: 200000.0,
     };
-
+    let max_age = 40.0;
+    let max_income = 500000.0;
     let input: Tensor<MyBackend, 2> = [
-        [person1.age, person1.income],
-        [person2.age, person2.income],
-        [person3.age, person3.income],
+        [person1.age / max_age, person1.income / max_income],
+        [person2.age / max_age, person2.income / max_income],
+        [person3.age / max_age, person3.income / max_income],
     ]
     .into();
-    let output = model.forward(input);
-    println!("Predictions from lesson 1: \n{output}\n");
+    let output = model.forward(input.clone());
+    let targets: Tensor<MyBackend, 2> = [[1.0], [0.0], [0.0]].into();
+    let loss = mse_loss(output, targets.clone());
+    println!(
+        "Loss BEFORE update: {}",
+        loss.clone().into_data().to_vec::<f32>().expect("loss")[0]
+    );
+    let learning_rate = 0.1_f64;
+    let mut optim = SgdConfig::new().init::<MyBackend, LinearModel>();
+
+    println!("Starting training...");
+    for epoch in 0..100 {
+        let output = model.forward(input.clone());
+        let loss = mse_loss(output, targets.clone());
+        
+        let loss_value = loss.clone().into_data().to_vec::<f32>().expect("loss")[0];
+        let mut gradients = loss.backward();
+        
+        let grads = GradientsParams::from_module::<MyBackend, LinearModel>(&mut gradients, &model);
+        model = optim.step(learning_rate, model, grads);
+
+        if epoch % 20 == 0 {
+            println!("Epoch {}: Loss = {:.4}", epoch, loss_value);
+        }
+    }
+    println!("Training complete!");
 }
 
 #[derive(Module, Debug, Clone)]
 struct LinearModel {
-    weights: Tensor<MyBackend, 2>,
-    bias: Tensor<MyBackend, 2>,
+    layer: Linear<MyBackend>,
 }
 
 impl LinearModel {
     pub fn new(device: &Device<MyBackend>) -> Self {
         Self {
-            weights: Tensor::random([2, 1], Distribution::Uniform(-1.0, 1.0), device),
-            bias: Tensor::zeros([1, 1], device),
+            layer: LinearConfig::new(2, 1).init(device),
         }
     }
     pub fn forward(&self, input: Tensor<MyBackend, 2>) -> Tensor<MyBackend, 2> {
-        return input.matmul(self.weights.clone()) + self.bias.clone();
+        self.layer.forward(input)
     }
+}
+
+pub fn mse_loss(
+    predictions: Tensor<MyBackend, 2>,
+    targets: Tensor<MyBackend, 2>,
+) -> Tensor<MyBackend, 1> {
+    let diff = predictions - targets;
+    let squared = diff.clone() * diff.clone();
+    return squared.mean();
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn test_mse_loss() {
+        let predictions: Tensor<MyBackend, 2> = [[1.0], [0.0], [0.5]].into();
+        let targets: Tensor<MyBackend, 2> = [[1.0], [1.0], [0.0]].into();
 
+        let loss = mse_loss(predictions, targets.clone());
+        let loss_value = loss.into_data().to_vec::<f32>().expect("loss tensor");
+
+        // MSE = average of (prediction - target) ** 2
+        assert!((loss_value[0] - 0.4167_f32).abs() < 1e-4);
+    }
     #[test]
     fn sum_and_product() {
         let t1: Tensor<MyBackend, 2> = [[2.0, 1.0], [2.0, 5.0]].into();

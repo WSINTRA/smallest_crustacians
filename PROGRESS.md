@@ -17,19 +17,19 @@ Learn Machine Learning by building a text classification pipeline in Rust using 
   - Ownership & Borrowing (`.clone()` for tensor operations).
   - `Result` handling (`into_data().to_vec().expect()`).
   - Trait bounds & generics (`Tensor<MyBackend, 2>`, `Device<MyBackend>`).
+- **Loss Function:** Implemented Mean Squared Error (MSE) from scratch with TDD.
+- **Feature Normalization:** Learned why scaling features matters and applied min-max normalization.
+- **Gradients & Autodiff:** Called `.backward()`, retrieved gradients, understood `.requires_grad()`.
+- **Training Loop:** Built a 100-epoch loop using Burn's `SgdConfig` optimizer and `GradientsParams`.
+- **Burn API Navigation:** Learned to read Burn docs (`SgdConfig`, `GradientsParams::from_module`, `LinearConfig`).
 
 ### 🚧 In Progress
-- **Loss Function & Training:** 
-  - Need to implement a loss function (e.g., Mean Squared Error or Binary Cross Entropy).
-  - Implement backward pass using Burn's autodiff.
-  - Create a training loop to adjust weights via gradient descent.
+- **Optimizer Integration:** Training loop runs but loss isn't decreasing yet (Burn 0.20 autodiff + optimizer API quirks with `.clone()` severing parameter IDs). Next session: resolve using Burn's built-in `Linear` layer or manual gradient application.
 
 ### 🔜 Next Steps
-1. Define a loss function to measure prediction error.
-2. Implement `.backward()` to compute gradients.
-3. Create an optimizer (e.g., SGD) to update weights.
-4. Run a training loop over multiple epochs.
-5. Evaluate model performance.
+1. Get the training loop actually reducing loss (resolve parameter ID tracking).
+2. Evaluate model performance on the 3 Person samples.
+3. Move toward real dataset + tokenization.
 
 ## Key Concepts Learned
 | Concept | Description |
@@ -39,7 +39,18 @@ Learn Machine Learning by building a text classification pipeline in Rust using 
 | **Bias** | Default offset added to predictions. Allows decision boundary to shift. |
 | **Broadcasting** | Automatically stretching smaller tensors to match larger ones for element-wise math. |
 | **Autodiff** | Automatic differentiation. Records operations to compute gradients via chain rule. |
+| **Loss Function** | A number quantifying prediction error. MSE = average of (prediction - target)². |
+| **Feature Normalization** | Scaling features to a similar range (0-1) to stabilize training. |
+| **Gradient** | The "slope" of the loss with respect to each weight. Points in the direction of steepest increase. |
+| **Learning Rate** | Step size for gradient descent. Too big = overshoot; too small = slow convergence. |
+| **Optimizer** | Automated weight updater (e.g., SGD). Handles the math of `w = w - lr * gradient`. |
+| **Epoch** | One full pass through the training data. |
+
+## Lessons Learned (Process)
+- **Burn's API is strict:** Type inference often needs explicit generics (`::<MyBackend, LinearModel>`). `GradientsParams` requires `from_module(&mut gradients, &model)` to extract gradients tied to registered parameters.
+- **`.clone()` in forward pass breaks autodiff tracking:** Cloning tensors creates new instances that lose their original parameter IDs, causing `from_module` to find 0 gradients.
+- **Reading the docs is part of the work:** Burn's optimizer API doesn't match PyTorch/TF patterns. The `SgdConfig -> .init() -> .step(lr, model, grads)` pattern must be learned from `burn.dev/docs`.
 
 ## Relevant Files
-- `src/main.rs`: Core implementation (model, tests, main loop).
+- `src/main.rs`: Core implementation (model, loss, training loop, tests).
 - `Cargo.toml`: Dependencies (`burn = { version = "0.20", features = ["cpu", "autodiff"] }`).
