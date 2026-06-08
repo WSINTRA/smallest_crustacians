@@ -63,6 +63,21 @@ fn main() {
         }
     }
     println!("Training complete!");
+    let final_forward = model.forward(input.clone());
+    let model_predictions = final_forward.into_data().to_vec::<f32>().expect("whoops");
+    let classified = pred_classifier(&model_predictions, 0.5);
+    let og_targets = vec![1.0, 0.0, 0.0]; // based on original training targets 
+    let mut correct = 0;
+    for (i, (pred, target)) in classified.iter().zip(og_targets.iter()).enumerate() {
+        if pred == target {
+            correct += 1;
+        }
+        println!("Person {}: predicted {}, target {}", i + 1, pred, target);
+    }
+    let accuracy = correct as f32 / classified.len() as f32;
+    println!("Model accuracy: {}", accuracy);
+    //
+    // Then print the classifed results along side the Targets and The person
 }
 #[derive(Module, Debug)]
 struct LinearModel<B: Backend> {
