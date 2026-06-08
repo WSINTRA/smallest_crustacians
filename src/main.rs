@@ -88,6 +88,64 @@ mod tests {
     use super::*;
 
     #[test]
+    fn from_grads_loss_decreased() {
+        type MyBackend = Autodiff<Wgpu>;
+        //forward pass
+        //compute loss
+        // call backward
+        // extract grads and verify one gradient is non-zero
+        let device: Device<MyBackend> = Default::default();
+        let mut model = LinearModel::<MyBackend>::new(&device);
+        let person1 = Person {
+            age: 25.0,
+            income: 500000.0,
+        };
+        let person2 = Person {
+            age: 20.0,
+            income: 240000.0,
+        };
+        let person3 = Person {
+            age: 40.0,
+            income: 200000.0,
+        };
+        let max_age = 40.0;
+        let max_income = 500000.0;
+
+        let input: Tensor<MyBackend, 2> = [
+            [person1.age / max_age, person1.income / max_income],
+            [person2.age / max_age, person2.income / max_income],
+            [person3.age / max_age, person3.income / max_income],
+        ]
+        .into();
+
+        let output = model.forward(input.clone());
+        let targets: Tensor<MyBackend, 2> = [[1.0], [0.0], [0.0]].into();
+        let loss = mse_loss(output, targets.clone());
+
+        let learning_rate = 0.1_f64;
+        let mut optim = SgdConfig::new().init::<MyBackend, LinearModel<MyBackend>>();
+
+        let mut loss_value: f32 = 1.0;
+        for epoch in 0..10 {
+            let _output = model.forward(input.clone());
+            let _loss = mse_loss(_output, targets.clone());
+            loss_value = _loss.clone().into_data().to_vec::<f32>().expect("loss")[0];
+
+            // from_grads takes ownership of the gradient map
+            let grads = GradientsParams::from_grads::<MyBackend, LinearModel<MyBackend>>(
+                _loss.backward(),
+                &model,
+            );
+
+            // Optimizer handles the weight update safely
+            model = optim.step(learning_rate, model, grads);
+            if epoch % 20 == 0 {
+                println!("Epoch {}: Loss = {:.4}", epoch, loss_value);
+            }
+        }
+        assert!(loss.clone().into_data().to_vec::<f32>().expect("whoops")[0] > loss_value);
+    }
+    #[test]
     fn sum_and_product() {
         type MyBackend = Autodiff<Wgpu>;
 
