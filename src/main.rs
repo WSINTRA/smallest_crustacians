@@ -68,14 +68,22 @@ fn main() {
     let classified = pred_classifier(&model_predictions, 0.5);
     let og_targets = vec![1.0, 0.0, 0.0]; // based on original training targets 
     let mut correct = 0;
+    let people = vec![person1, person2, person3];
     for (i, (pred, target)) in classified.iter().zip(og_targets.iter()).enumerate() {
         if pred == target {
             correct += 1;
         }
-        println!("Person {}: predicted {}, target {}", i + 1, pred, target);
+        println!(
+            "Person {} (age {}, income {} ): predicted {}, target {}",
+            i + 1,
+            people[i].age,
+            people[i].income,
+            pred,
+            target
+        );
     }
     let accuracy = correct as f32 / classified.len() as f32;
-    println!("Model accuracy: {}", accuracy);
+    println!("Model accuracy: {}%", accuracy * 100 as f32);
     //
     // Then print the classifed results along side the Targets and The person
 }
