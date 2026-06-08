@@ -78,6 +78,18 @@ impl<B: Backend> LinearModel<B> {
         self.layer.forward(input)
     }
 }
+pub fn pred_classifier(predictions: &[f32], thres: f32) -> Vec<f32> {
+    let mut classified: Vec<f32> = Vec::new();
+
+    for value in predictions {
+        if *value > thres {
+            classified.push(1.0);
+        } else {
+            classified.push(0.0);
+        }
+    }
+    classified
+}
 pub fn mse_loss<B: Backend>(predictions: Tensor<B, 2>, targets: Tensor<B, 2>) -> Tensor<B, 1> {
     let diff = predictions - targets;
     let squared = diff.clone() * diff.clone();
@@ -144,6 +156,16 @@ mod tests {
             }
         }
         assert!(loss.clone().into_data().to_vec::<f32>().expect("whoops")[0] > loss_value);
+    }
+    #[test]
+    fn test_pred_classifier() {
+        let predictions = vec![0.9, 0.1, 0.1];
+        let classified = pred_classifier(&predictions, 0.5);
+        assert_eq!(classified, vec![1.0, 0.0, 0.0]);
+
+        let all_predictions = vec![0.9, 0.9, 0.9];
+        let _clasified = pred_classifier(&all_predictions, 0.5);
+        assert_eq!(_clasified, vec![1.0, 1.0, 1.0]);
     }
     #[test]
     fn sum_and_product() {
