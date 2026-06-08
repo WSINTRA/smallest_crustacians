@@ -26,15 +26,25 @@ Learn Machine Learning by building a text classification pipeline in Rust using 
 - **Code Organization:** Extracted `Person` struct into `src/person.rs` module.
 - **Generic Module Pattern:** Fixed `from_grads` returning zero gradients by making `LinearModel` generic over `B: Backend` — the derive macro needs generics to generate correct `visit` delegation.
 
+### ✅ Completed (Session 2 — June 8, 2026)
+- **TDD — Training Loop Test:** Wrote `from_grads_loss_decreased` test that asserts loss decreases after 10 epochs. Regression guard against silent training failures.
+- **`pred_classifier` Function:** Built a threshold-based classifier (predictions > 0.5 → class 1, else class 0) with TDD. Two tests: all-correct and all-positive scenarios.
+- **Model Evaluation:** Added post-training evaluation block in `main()` — prints each person's prediction vs target, computes and displays accuracy (achieved 100% on 3 samples).
+- **Rust Patterns:**
+  - **Slices (`&[f32]`)** — function accepts a slice so it works with both arrays and Vecs.
+  - **Borrowing in function calls** — `pred_classifier(&predictions, 0.5)` — passing references to avoid moving ownership.
+  - **`zip` + `enumerate`** — pairing two iterators with indices for parallel iteration.
+  - **`Vec::push`** — building a Vec incrementally in a loop.
+- **Refactor:** Put `Person` instances into a `Vec` for indexed access during evaluation.
+- **Code Quality:** Ran `cargo fmt` for standard Rust formatting.
+
 ### 🚧 In Progress
-- **Test Coverage:** Only `sum_and_product` test remains. `test_mse_loss` was dropped during refactor. Need regression tests for `from_grads` and training convergence.
+- **Test Coverage:** `test_mse_loss` was dropped during refactor and should be restored.
 
 ### 🔜 Next Steps
-1. Add TDD tests: `from_grads` finds gradients, training loop decreases loss
-2. Evaluate model on the 3 Person samples (accuracy, predictions vs targets)
-3. Experiment with learning rate, epoch count, and optimizer choice (SGD vs Adam)
-4. Move toward real dataset + tokenization
-5. Add a hidden layer (multi-layer perceptron)
+1. Experiment with learning rate, epoch count, and optimizer choice (SGD vs Adam)
+2. Add a hidden layer (multi-layer perceptron)
+3. Move toward real dataset + tokenization
 
 ## Key Concepts Learned
 | Concept | Description |
@@ -53,6 +63,10 @@ Learn Machine Learning by building a text classification pipeline in Rust using 
 | **Module Derive** | `#[derive(Module)]` generates `visit`, `map`, `into_record`, etc. **Must be generic over `B: Backend`** for correct recursion into nested modules. |
 | **GradientsParams** | Burn container that bridges gradients from `backward()` to the optimizer via `from_grads()`. |
 | **`visit` Delegation** | The `Module` visitor pattern walks the module tree. If `visit` doesn't recurse, `from_grads` finds zero parameters. |
+| **Classification Threshold** | Raw model output is a float. Apply a threshold (0.5) to convert to binary class labels (0 or 1). |
+| **Accuracy** | `correct / total` — fraction of predictions that match the true labels. |
+| **Slice (`&[T]`)** | A borrowed view into a sequence. Works with both arrays and Vecs. More flexible than `Vec<T>` for function parameters. |
+| **`zip` + `enumerate`** | `zip` pairs two iterators element-by-element. `enumerate` adds an index. Combined: `for (i, (a, b)) in vec1.iter().zip(vec2.iter()).enumerate()`. |
 
 ## Lessons Learned (Process)
 - **Burn's API is strict:** Type inference often needs explicit generics (`::<MyBackend, LinearModel<MyBackend>>`).
@@ -62,6 +76,10 @@ Learn Machine Learning by building a text classification pipeline in Rust using 
 - **TDD is essential for debugging ML:** We used targeted tests to isolate the gradient extraction failure from the autodiff graph itself.
 - **Silent failures are the worst:** Optimizer silently skips when no gradients are found. No warnings, no panics — just flat loss.
 - **Diagnostic isolation works:** We proved the bug was in the wrapper (not backend, not loss, not `from_grads` itself) by testing bare `Linear` vs wrapped `LinearModel`.
+- **ML tests assert properties, not exact values:** You can't predict exact outputs (weights are random), but you can assert invariants — "loss decreases," "gradients are non-zero," "accuracy > 0."
+- **Test the edges, not the middle:** A test where all predictions are correct only catches bugs in the happy path. A mixed test (some correct, some wrong) proves the accuracy math is right.
+- **Separate logic from presentation:** `pred_classifier` returns classified values (logic). `main()` decides how to print them (presentation). Each has a single responsibility.
+- **Borrowing errors are common and fixable:** When a function expects `&[f32]` and you pass `Vec<f32>`, just add `&`. The compiler tells you exactly what to do.
 
 ## Relevant Files
 - `src/main.rs`: Core implementation (model, loss, training loop, tests).

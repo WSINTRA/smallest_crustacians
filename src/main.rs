@@ -74,7 +74,7 @@ fn main() {
             correct += 1;
         }
         println!(
-            "Person {} (age {}, income {} ): predicted {}, target {}",
+            "Person {} (age {}, income {}): predicted {}, target {}",
             i + 1,
             people[i].age,
             people[i].income,
