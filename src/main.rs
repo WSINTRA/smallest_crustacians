@@ -113,6 +113,7 @@ pub fn pred_classifier(predictions: &[f32], thres: f32) -> Vec<f32> {
     }
     classified
 }
+// Mean Squared Error Loss function
 pub fn mse_loss<B: Backend>(predictions: Tensor<B, 2>, targets: Tensor<B, 2>) -> Tensor<B, 1> {
     let diff = predictions - targets;
     let squared = diff.clone() * diff.clone();
