@@ -42,9 +42,19 @@ Learn Machine Learning by building a text classification pipeline in Rust using 
 - **Test Coverage:** `test_mse_loss` was dropped during refactor and should be restored.
 
 ### 🔜 Next Steps
-1. Experiment with learning rate, epoch count, and optimizer choice (SGD vs Adam)
+1. Experiment with learning rate, epoch count, and optimizer choice (SGD vs Adam) — **observe behavior, no math**
 2. Add a hidden layer (multi-layer perceptron)
 3. Move toward real dataset + tokenization
+
+## Pedagogical Shift (June 15, 2026)
+
+**User has dyscalculia.** All teaching must avoid math explanations, calculus, and derivations.
+
+- ML operations are **black boxes**: describe inputs, outputs, and observable behavior
+- Learn by **experimentation**: change a parameter, run the code, observe the result, notice the pattern
+- **Rust best practices are first-class** learning goals, equal to ML concepts
+- Use **analogies over equations** — see AGENT.md "What to Say Instead" table
+- TUTOR.md and AGENT.md have been updated to reflect this approach
 
 ## Key Concepts Learned
 | Concept | Description |

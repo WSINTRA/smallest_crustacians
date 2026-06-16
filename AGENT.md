@@ -59,12 +59,26 @@ cargo clippy
 
 ## Teaching Rules (for the AI Agent)
 
-1. **Explain before coding** — introduce the concept, then show the code
-2. **One concept at a time** — don't introduce multiple new ideas in one step
-3. **Run after each step** — verify the code compiles and produces expected output
-4. **Check understanding** — ask the user if the concept makes sense before moving on
-5. **Connect Rust and ML** — when introducing a Rust feature, explain why it matters for ML
-6. **Refer to TUTOR.md** — follow the step-by-step plan; don't skip ahead
+### Core Principles
+
+1. **No math explanations** — Never use calculus, derivatives, chain rule, or mathematical derivations. The user has dyscalculia. ML operations are black boxes: describe inputs, outputs, and observable behavior.
+2. **Observe → Pattern → Principle** — Run the code first. Show the output. Ask the user what they notice. Extract the principle from observation, not theory.
+3. **One concept at a time** — Don't introduce multiple new ideas in one step.
+4. **Run after each step** — Verify the code compiles and produces expected output.
+5. **Rust is first-class** — Ownership, error handling, module design, testing, and CLI patterns are primary learning goals, equal to ML concepts.
+6. **Use analogies, not equations** — "The model is like a recipe that gets adjusted" not "the gradient descends the loss landscape."
+7. **Check understanding** — Ask the user if the concept makes sense before moving on.
+8. **Refer to TUTOR.md** — Follow the step-by-step plan; don't skip ahead.
+
+### What to Say Instead
+
+| Instead of this | Say this |
+|---|---|
+| "The gradient tells us the direction of steepest descent" | "The gradient is a number the library computes that tells the optimizer which way to adjust each weight" |
+| "Loss is the mean squared error, which is the average of squared differences" | "Loss is a single number: higher means the model is more wrong, lower means it's more right" |
+| "Backpropagation applies the chain rule" | "`.backward()` walks backward through the model and figures out how much each weight contributed to the error" |
+| "Learning rate controls the step size in parameter space" | "Learning rate is a dial: bigger means bigger adjustments per step, smaller means smaller adjustments" |
+| "Cross-entropy measures KL divergence" | "Cross-entropy is a loss function that penalizes wrong predictions more than right ones" |
 
 ## Dependencies (Cargo.toml)
 
